@@ -1,7 +1,8 @@
 function [coords] = InterestPointDetector(img, threshold)
 %Q1 Automatic
 %2a) Harris Point Detector
-
+maxheight = size(img, 1);
+maxwidth = size(img, 2);
 G = rgb2gray(img);
 img = im2double(G);
 
@@ -30,6 +31,16 @@ mx = ordfilt2(cim,sze^2,ones(sze)); % Grey-scale dilate.
 cim = (cim==mx)&(cim>threshold);       % Find maxima.
 
 [r,c] = find(cim);                  % Find row,col coords.
+coords = [c r];
+%code from below removes all the corners that are within 32 pixels from the
+%edges of the image, this is done so that in Q1,2b patches of 32x32 can be
+%obtained with meaningful data
+index = [];
+for i = 1:size(coords, 1)
+    if~(coords(i,1)>32 && coords(i,2)>32 && coords(i,1)<maxwidth - 32 && coords(i,2)<maxheight - 32)
+        index(end+1) = i;
+    end
+end
+coords(index,:)=[];
 %figure, imagesc(img), axis image, colormap(gray), hold on
-%plot(c,r,'ys'), title('corners detected');
-coords = [r c];
+%plot(coords(:,1),coords(:,2),'ys'), title('corners detected');

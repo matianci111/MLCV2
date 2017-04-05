@@ -1,0 +1,10 @@
+img = imread('pictures/len_top.jpg');
+coords = InterestPointDetector(img, 0.01);
+%for i = 1:(coords.size(2))
+G = rgb2gray(img);
+edges = 1:2:256;
+for i=1:size(coords, 1)
+patch = G(coords(:,2)-15:coords(:,2)+15,coords(:,1)-15:coords(:,1)+15);
+N = histcounts(patch, edges, 'Normalization', 'probability');
+patches(i) = N;
+end
