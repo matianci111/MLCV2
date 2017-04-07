@@ -62,7 +62,7 @@ cim = cim_ones.*cim;
 [r,c,value] = find(cim);                  % Find row,col coords.
 [value,idx] = sort(value,'descend');
 coords = [r(idx),c(idx)];
-%coords = coords(1:n_coords,:);
+
 else
 % directly extract local maxima
 cim = (cim>threshold);
@@ -71,7 +71,6 @@ cim = (cim>threshold);
 [r,c,value] = find(cim);                  % Find row,col coords.
 [value,idx] = sort(value,'descend');
 coords = [r(idx),c(idx)];
-%coords = coords(1:n_coords,:);
 end
 
 

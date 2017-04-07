@@ -12,6 +12,6 @@ rowofxy = -[x1; y1; ones(1,n)];
 hx = [rowofxy; rowofzero; x2.*x1; x2.*y1; x2];
 hy = [rowofzero; rowofxy; y2.*x1; y2.*y1; y2];
 h = [hx hy];
-[U, D, V] = svd(h, 'econ');
-h = (reshape(U(:,9), 3, 3)).';
+[U, D, V] = svd(h');
+h = (reshape(V(:,9), 3, 3)).';
 end

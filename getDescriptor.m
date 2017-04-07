@@ -9,6 +9,6 @@ end
 edges = 1:2:256;
 for i=1:size(coords, 1)
     patch = img(coords(i,1)-15:coords(i,1)+15,coords(i,2)-15:coords(i,2)+15);
-    N = histcounts(patch, edges, 'Normalization', 'probability');
+    N = histcounts(patch, edges);
     patches(i,:) = N(1,:);
 end
