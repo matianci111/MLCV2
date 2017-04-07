@@ -5,23 +5,21 @@ img2 = imread('pictures/img2.pgm');
 threshold = 0.4; 
 visualise = 1; num_of_strongest_corners = 200;
 ANMS = true; % adaptive non-maximal suppression
-radius = 10;
+radius = 5;
 %Q1 2a) Harris Point Detector
 coords1 = InterestPointDetector(img1, threshold, ANMS, radius);
 
 % visualise
 if visualise
     show_corner = [];
-    num_of_corners=size(coords1,1);
-    if num_of_corners > num_of_strongest_corners %the number of corners
-        figure, imagesc(img1), axis image, colormap(gray), hold on
-        plot(coords1(1:num_of_strongest_corners,2),coords1(1:num_of_strongest_corners,1),'ys'), title('corners detected');
+    Size_PI=size(coords1,1);
+    if Size_PI>num_of_strongest_corners
+        loop_size=num_of_strongest_corners;
     else
-        loop_size=num_of_corners;
-        figure, imagesc(img1), axis image, colormap(gray), hold on
-        plot(coords1(:,2),coords1(:,1),'ys'), title('corners detected');
+        loop_size=Size_PI;
     end
-    
+    figure, imagesc(img1), axis image, colormap(gray), hold on
+    plot(coords1(:,2),coords1(:,1),'ys'), title('corners detected');
 end
 %%
 %Q1 2b) Obtain Descriptor
