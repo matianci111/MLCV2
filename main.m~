@@ -1,47 +1,77 @@
 %img = imread('pictures/len_top.jpg');
 img1 = imread('pictures/img1.pgm');
 img2 = imread('pictures/img2.pgm');
-%%
+%% paramaters that can be adjusted
 threshold = 0.4; 
-visualise = 1; num_of_strongest_corners = 200;
+visualise = 1;
 ANMS = true; % adaptive non-maximal suppression
 radius = 5;
-%Q1 2a) Harris Point Detector
+
+%% image 1
+%Q1 2a) image 1 - Harris Point Detector
 coords1 = InterestPointDetector(img1, threshold, ANMS, radius);
 
-% visualise
-if visualise
-    show_corner = [];
-    Size_PI=size(coords1,1);
-    if Size_PI>num_of_strongest_corners
-        loop_size=num_of_strongest_corners;
-    else
-        loop_size=Size_PI;
-    end
-    figure, imagesc(img1), axis image, colormap(gray), hold on
-    plot(coords1(:,2),coords1(:,1),'ys'), title('corners detected');
+%Q1 2b) image 1 - Obtain Descriptor
+Descriptor_length = 32;
+descriptor1 = getDescriptor(coords1, img1, Descriptor_length);
+
+%% image 2
+%Q1 2a) image 2 - Harris Point Detector
+coords2 = InterestPointDetector(img2, threshold, ANMS, radius);
+
+%Q1 2B) image 2 - Obtain Descriptor
+Descriptor_length = 32;
+descriptor2 = getDescriptor(coords2, img2, Descriptor_length);
+
+%% obtain correspondance
+% ========== Q1 2C) ========== 
+knn_threshold = 1;
+[idx_matchedIP_img2_raw, distance] = myKnnsearch(descriptor1,descriptor2,knn_threshold);
+[distance,idx] = sort(distance,'ascend');
+matchedIP_idx = idx(~isinf(distance)); % the index of matched interest points
+
+idx_matchedIP_img1_raw = 1:1:size(idx_matchedIP_img2_raw,2);
+idx_matchedIP_img1 = idx_matchedIP_img1_raw(matchedIP_idx);
+idx_matchedIP_img2 = idx_matchedIP_img2_raw(matchedIP_idx);
+
+% remove correspondance that are not unique (which are ambiguous)
+arr1 = getNonRepeatableElementIdx(idx_matchedIP_img1);
+arr2 = getNonRepeatableElementIdx(idx_matchedIP_img2);
+idx = intersect(arr1,arr2);
+correspondance = [idx_matchedIP_img1(idx);idx_matchedIP_img2(idx)];
+if size(correspondance,2)==0
+   error('user defined error - no interest point is matched under current parameters'); 
 end
-%%
-%Q1 2b) Obtain Descriptor
-descriptor1 = getDescriptor(coords1, img1);
 
-%%
-%Q1 2a) Harris Point Detector
-coords2 = InterestPointDetector(img2, threshold);
+%% Compute homography matrix
+% ========== Q1 3A) ==========  
 
-%Q1 2B) Obtain Descriptor
-descriptor2 = getDescriptor(coords2, img2);
-
-%Q1 2C) Obtain correspondance
-[IDX distance] = myKnnsearch(descriptor1, descriptor2);
-
-%Q1 3A) Compute homography matrix
-%obtaining two vectors
-v1 = coords1;
-v2 = coords2(IDX,:);
+% obtaining two vectors
+v1 = coords1(correspondance(1,:),:);
+v2 = coords2(correspondance(2,:),:);
 h = gethmatrix(v1, v2);
-f1 = estimateFundamentalMatrix(v1, v2);
-projectedv2 = hmatrixproject(v2, h);
-figure, imagesc(img1), axis image, colormap(gray), hold on
-plot(projectedv2(:,1),projectedv2(:,2),'ys'), title('corners detected');
+if visualise
+    figure;
+    subplot(2,2,1);
+    myvisualise(v1, img1, 'original corner image 1');
+    subplot(2,2,2);
+    myvisualise(v2, img2, 'original corner image 2');
+end
+%f1 = estimateFundamentalMatrix(v1, v2);
+projectedv2 = hmatrixproject(v1, h);
+if visualise
+    subplot(2,2,[3 4]);
+    myvisualise(projectedv2, img2, 'Projected coords1 on image 2');
+    
+    % super title displaying the values of used parameters 
+    if ANMS 
+        print_radius = sprintf(' suppresion radius = %d pixel',radius);
+    end
+    print_threshold = sprintf('\n threshold for local maxima = %f',threshold);
+    suptitle_print_msg = strcat(print_radius,print_threshold)
+    suptitle('radius = ');
+    threshold = 0.4; 
+    ANMS = true; % adaptive non-maximal suppression
+    radius = 5;
+end
 %f2 = getfmatrix(v1, v2);

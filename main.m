@@ -1,46 +1,80 @@
 %img = imread('pictures/len_top.jpg');
 img1 = imread('pictures/img1.pgm');
 img2 = imread('pictures/img2.pgm');
-%%
-threshold = 1.2; 
-visualise = 1; num_of_strongest_corners = 200;
+%% paramaters that can be adjusted
+threshold = 0.8; 
+visualise = 1;
+knn_threshold = 1.05;
 ANMS = true; % adaptive non-maximal suppression
-radius = 10;
-%Q1 2a) Harris Point Detector
+radius = 30;
+
+%% image 1
+%Q1 2a) image 1 - Harris Point Detector
 coords1 = InterestPointDetector(img1, threshold, ANMS, radius);
 
-%%
-%Q1 2b) Obtain Descriptor
-descriptor1 = getDescriptor(coords1, img1);
+%Q1 2b) image 1 - Obtain Descriptor
+Descriptor_length = 32;
+descriptor1 = getDescriptor(coords1, img1, Descriptor_length);
 
-%%
-%Q1 2a) Harris Point Detector
+%% image 2
+%Q1 2a) image 2 - Harris Point Detector
 coords2 = InterestPointDetector(img2, threshold, ANMS, radius);
 
-% visualise
-%Q1 2B) Obtain Descriptor
-descriptor2 = getDescriptor(coords2, img2);
+%Q1 2B) image 2 - Obtain Descriptor
+Descriptor_length = 32;
+descriptor2 = getDescriptor(coords2, img2, Descriptor_length);
 
-%Q1 2C) Obtain correspondance
-[InterIDX distance] = myKnnsearch(descriptor1, descriptor2);
-tmp_size = size(InterIDX, 2);
-myones = 1:1:tmp_size;
-InterIDX = [InterIDX;myones];
+%% obtain correspondance
+% ========== Q1 2C) ========== 
+[idx_matchedIP_img2_raw, distance] = myKnnsearch(descriptor1,descriptor2,knn_threshold);
 [distance,idx] = sort(distance,'ascend');
-IDX = InterIDX(:,idx);
-v2INDX = IDX(1,1:4);
-v1INDX = IDX(2,1:4);
+matchedIP_idx = idx(~isinf(distance)); % the index of matched interest points
 
-%Q1 3A) Compute homography matrix
-%obtaining two vectors
-v1 = coords1(v1INDX,:);
-v2 = coords2(v2INDX,:);
+idx_matchedIP_img1_raw = 1:1:size(idx_matchedIP_img2_raw,2);
+idx_matchedIP_img1 = idx_matchedIP_img1_raw(matchedIP_idx);
+idx_matchedIP_img2 = idx_matchedIP_img2_raw(matchedIP_idx);
+
+% remove correspondance that are not unique (which are ambiguous)
+if knn_threshold ~= 1
+    arr1 = getNonRepeatableElementIdx(idx_matchedIP_img1);
+    arr2 = getNonRepeatableElementIdx(idx_matchedIP_img2);
+    idx = intersect(arr1,arr2);
+    correspondance = [idx_matchedIP_img1(idx);idx_matchedIP_img2(idx)];
+    if size(correspondance,2)==0
+       error('user defined error - no interest point is matched under current parameters'); 
+    end
+else
+    correspondance = [idx_matchedIP_img1;idx_matchedIP_img2];
+end
+
+%% Compute homography matrix
+% ========== Q1 3A) ==========  
+
+% obtaining two vectors
+v1 = coords1(correspondance(1,:),:);
+v2 = coords2(correspondance(2,:),:);
 h = gethmatrix(v1, v2);
 if visualise
-    myvisualise(v1, img1, num_of_strongest_corners, 'original corner image 1');
-    myvisualise(v2, img2, num_of_strongest_corners, 'original corner image 2');
+    figure;
+    subplot(2,2,1);
+    myvisualise(v1, img1, 'original corner image 1');
+    subplot(2,2,2);
+    myvisualise(v2, img2, 'original corner image 2');
 end
 %f1 = estimateFundamentalMatrix(v1, v2);
 projectedv2 = hmatrixproject(v1, h);
-myvisualise(projectedv2, img2, num_of_strongest_corners, 'Projected coords1 on image 2');
+if visualise
+    subplot(2,2,[3 4]);
+    myvisualise(projectedv2, img2, 'Projected coords1 on image 2');
+    
+    % super title displaying the values of used parameters 
+    if ANMS 
+        print_radius = sprintf(' suppresion radius = %d pixel',radius);
+    end
+    print_thre = sprintf('\n threshold for local maxima = %f',threshold);
+    print_knnThre = sprintf('\n knn threshold for rejecting ambiguous matchings = %f',knn_threshold);
+    suptitle_print_msg = strcat(print_radius,print_thre,print_knnThre);
+    suptitle(suptitle_print_msg);
+
+end
 %f2 = getfmatrix(v1, v2);
