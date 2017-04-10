@@ -1,12 +1,12 @@
 %img = imread('pictures/len_top.jpg');
-img1 = imread('pictures/img1.pgm');
-img2 = imread('pictures/img2.pgm');
+img1 = imread('pictures/scene1.ppm');
+img2 = imread('pictures/scene5.ppm');
 %% paramaters that can be adjusted
-threshold = 0.8; 
+threshold = 0; 
 visualise = 1;
-knn_threshold = 1.05;
+knn_threshold = 1.2;
 ANMS = true; % adaptive non-maximal suppression
-radius = 30;
+radius = 10;
 
 %% image 1
 %Q1 2a) image 1 - Harris Point Detector
@@ -19,7 +19,6 @@ descriptor1 = getDescriptor(coords1, img1, Descriptor_length);
 %% image 2
 %Q1 2a) image 2 - Harris Point Detector
 coords2 = InterestPointDetector(img2, threshold, ANMS, radius);
-
 %Q1 2B) image 2 - Obtain Descriptor
 Descriptor_length = 32;
 descriptor2 = getDescriptor(coords2, img2, Descriptor_length);
@@ -53,7 +52,9 @@ end
 % obtaining two vectors
 v1 = coords1(correspondance(1,:),:);
 v2 = coords2(correspondance(2,:),:);
-h = gethmatrix(v1, v2);
+hv1 = coords1(correspondance(1,1:8),:);
+hv2 = coords2(correspondance(2,1:8),:);
+h = gethmatrix(hv1, hv2);
 if visualise
     figure;
     subplot(2,2,1);
@@ -61,8 +62,7 @@ if visualise
     subplot(2,2,2);
     myvisualise(v2, img2, 'original corner image 2');
 end
-%f1 = estimateFundamentalMatrix(v1, v2);
-projectedv2 = hmatrixproject(v1, h);
+projectedv2 = hmatrixproject(hv1, h);
 if visualise
     subplot(2,2,[3 4]);
     myvisualise(projectedv2, img2, 'Projected coords1 on image 2');
@@ -77,4 +77,9 @@ if visualise
     suptitle(suptitle_print_msg);
 
 end
-%f2 = getfmatrix(v1, v2);
+f1 = estimateFundamentalMatrix(v1, v2,'Method','RANSAC','NumTrials',500);
+%f2 = getfmatrix(hv1, hv2);
+HA = calculateHA(projectedv2, hv2);
+hold off;
+figure;
+drawEpipolarline(f1, v1, img2);

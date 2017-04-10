@@ -35,7 +35,13 @@ coords1_sift = vertcat(frames1(2,:),frames1(1,:))';
 % image 2
 [frames2, descriptor2_sift] = vl_phow(single(img2),'Sizes',PHOW_Sizes,'Step',PHOW_Step); 
 coords2_sift = vertcat(frames2(2,:),frames2(1,:))';
-
+if visualise
+    figure;
+    subplot(2,2,1);
+    myvisualise(coords1_sift, img1, 'very original corner image 1');
+    subplot(2,2,2);
+    myvisualise(coords2_sift, img2, 'very original corner image 2');
+end
 
 %% Obtain correspondance
 [idx_matchedIP_img2_raw_sift, distance_sift] = myKnnsearch(descriptor1_sift',descriptor2_sift',knn_threshold);
