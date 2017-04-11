@@ -52,8 +52,8 @@ end
 % obtaining two vectors
 v1 = coords1(correspondance(1,:),:);
 v2 = coords2(correspondance(2,:),:);
-hv1 = coords1(correspondance(1,1:8),:);
-hv2 = coords2(correspondance(2,1:8),:);
+hv1 = coords1(correspondance(1,1:4),:);
+hv2 = coords2(correspondance(2,1:4),:);
 h = gethmatrix(hv1, hv2);
 if visualise
     figure;
@@ -77,9 +77,11 @@ if visualise
     suptitle(suptitle_print_msg);
 
 end
-f1 = estimateFundamentalMatrix(v1, v2,'Method','RANSAC','NumTrials',500);
-%f2 = getfmatrix(hv1, hv2);
+numberoftrial = 2000;
+threshold = 0.001;
+%[F,inliersIndex] = estimateFundamentalMatrix(v1, v2,'Method','RANSAC','NumTrials',500);
+[bestf f2] = RansacPredictF(v1, v2, numberoftrial, threshold);
 HA = calculateHA(projectedv2, hv2);
 hold off;
 figure;
-drawEpipolarline(f1, v1, img2);
+drawEpipolarline(bestf, v1, img2);
